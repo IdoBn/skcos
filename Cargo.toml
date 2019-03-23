@@ -5,8 +5,14 @@ authors = ["Ido Ben-Natan <ido.bennatan@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-bufstream = "0.1"
+serde_derive = "1.0.34"
+bincode = "1.0.0"
+serde = "1.0.34"
 
 [[bin]]
 name = "relay-agent"
 path = "src/relay_agent.rs"
+
+[[bin]]
+name = "reverse-socks-server"
+path = "src/reverse_socks_server.rs"

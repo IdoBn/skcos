@@ -1,5 +1,10 @@
 
-# Design
+# skcos
+
+We are building a reverse socks server so the name should obviously be socks backwards ;)
+```bash
+rev <<< socks
+```
 
 ## Network Diagram
 ```
@@ -60,3 +65,7 @@ Finally you can hookup your browser or proxychains to the relay agent and that i
     3.1. the two new sockets are somehow mapped together...
 3. socks server initiates a new connection to the relay server as soon as it gets data to it's previous connection. this way we can handle multiple connections at once.
 4. data is passed between the two sockets until one of them disconnects
+
+## Todo
+- [ ] Clean up code after I've properly learned rust.
+- [ ] Disconnect dangling sessions (to reproduce this do a simple curl + proxychains and see what happens)

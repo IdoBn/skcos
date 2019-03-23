@@ -32,11 +32,15 @@ fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: R
                 println!("Read {}, {}", count, String::from_utf8_lossy(&buf));
                 match sender.send(buf.clone()) {
                     Ok(_) => println!("sender ok!"),
-                    Err(e) => panic!("Err sender send {}", e),
+                    Err(_e) => break,
                 }
             }
             Err(e) => match e.kind() {
                 ErrorKind::WouldBlock => (),
+                ErrorKind::ConnectionReset => {
+                    println!("Connection Reset!");
+                    break;
+                }
                 _ => panic!("Error read {}", e),
             }
         }
@@ -115,11 +119,12 @@ fn proxy_reverse_listener(addr: &str, channel_rx: Receiver<(Sender<Vec<u8>>, Rec
                                     println!("Read {}, {}", count, String::from_utf8_lossy(&buf));
                                     match sender.send(buf.clone()) {
                                         Ok(_) => println!("sender ok!"),
-                                        Err(e) => panic!("Err sender send {}", e),
+                                        Err(_e) => break,
                                     }
                                 }
                                 Err(e) => match e.kind() {
                                     ErrorKind::WouldBlock => (),
+                                    ErrorKind::ConnectionReset => break,
                                     _ => panic!("Error read {}", e),
                                 }
                             }

@@ -28,3 +28,6 @@
     3.1. the two new sockets are somehow mapped together...
 3. socks server initiates a new connection to the relay server as soon as it gets data to it's previous connection. this way we can handle multiple connections at once.
 4. data is passed between the two sockets until one of them disconnects
+
+todo:
+there might be an issue with disconnecting sockets. They only disconnect when you try to send stat through them again. We may need to add another channel to somehow trigger the disconnect manually...

@@ -6,3 +6,7 @@ edition = "2018"
 
 [dependencies]
 bufstream = "0.1"
+
+[[bin]]
+name = "relay-agent"
+path = "src/relay_agent.rs"

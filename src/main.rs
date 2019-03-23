@@ -2,7 +2,7 @@ extern crate bufstream;
 
 use std::str;
 use std::str::FromStr;
-use std::io::{Read, Write};
+use std::io::{Read, Write, ErrorKind};
 use std::net::{TcpListener, TcpStream};
 use std::net::SocketAddr;
 use std::thread::spawn;
@@ -35,7 +35,10 @@ fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: R
                     Err(e) => panic!("Err sender send {}", e),
                 }
             }
-            Err(e) => println!("Error read {}", e),
+            Err(e) => match e.kind() {
+                ErrorKind::WouldBlock => (),
+                _ => panic!("Error read {}", e),
+            }
         }
 
         match receiver.recv_timeout(Duration::from_millis(100)) {
@@ -46,7 +49,7 @@ fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: R
                     Err(e) => println!("Error write {}", e),
                 }
             }
-            Err(e) => println!("recv timeout {}", e)
+            Err(_e) => (),
         }
     }
 }
@@ -58,7 +61,7 @@ fn proxy_client_listener(addr: &str, channel_sender: Sender<(Sender<Vec<u8>>, Re
     for stream in listener.incoming() {
         match stream {
             Err(_) => println!("listen error"),
-            Ok(mut stream) => {
+            Ok(stream) => {
                 println!("connection from {} to {}",
                          stream.peer_addr().unwrap(),
                          stream.local_addr().unwrap());
@@ -103,9 +106,8 @@ fn proxy_reverse_listener(addr: &str, channel_rx: Receiver<(Sender<Vec<u8>>, Rec
                                         Err(e) => println!("Error write {}", e),
                                     }
                                 }
-                                Err(e) => println!("recv timeout {}", e)
+                                Err(_e) => (),
                             }
-                            //println!("recved stuff: {}", String::from_utf8_lossy(&receiver.recv().unwrap()));
                             
                             let mut buf: Vec<u8> = vec![0; 1024];
                             match socket.read(&mut buf) {
@@ -116,7 +118,10 @@ fn proxy_reverse_listener(addr: &str, channel_rx: Receiver<(Sender<Vec<u8>>, Rec
                                         Err(e) => panic!("Err sender send {}", e),
                                     }
                                 }
-                                Err(e) => println!("Error read {}", e),
+                                Err(e) => match e.kind() {
+                                    ErrorKind::WouldBlock => (),
+                                    _ => panic!("Error read {}", e),
+                                }
                             }
                         }
 
@@ -129,11 +134,9 @@ fn proxy_reverse_listener(addr: &str, channel_rx: Receiver<(Sender<Vec<u8>>, Rec
 }
 
 fn main() {
-    //spawn(move|| {
     let (channel_tx, channel_rx): (Sender<(Sender<Vec<u8>>, Receiver<Vec<u8>>)>, Receiver<(Sender<Vec<u8>>, Receiver<Vec<u8>>)>) = mpsc::channel();
 
     proxy_reverse_listener("127.0.0.1:1111", channel_rx); 
     
     proxy_client_listener("127.0.0.1:2222", channel_tx);
-    //proxyListener("127.0.0.1:1111");
 }

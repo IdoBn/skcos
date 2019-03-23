@@ -1,9 +1,7 @@
-extern crate bufstream;
-
 use std::str;
 use std::str::FromStr;
 use std::io::{Read, Write, ErrorKind};
-use std::net::{TcpListener, TcpStream};
+use std::net::{TcpListener, TcpStream, Shutdown};
 use std::net::SocketAddr;
 use std::thread::spawn;
 use std::sync::mpsc;
@@ -30,7 +28,7 @@ fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: R
         match stream.read(&mut buf) {
             Ok(count) => {
                 println!("Read {}, {}", count, String::from_utf8_lossy(&buf));
-                match sender.send(buf.clone()) {
+                match sender.send(buf[..count].to_vec()) {
                     Ok(_) => println!("sender ok!"),
                     Err(_e) => break,
                 }
@@ -39,6 +37,7 @@ fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: R
                 ErrorKind::WouldBlock => (),
                 ErrorKind::ConnectionReset => {
                     println!("Connection Reset!");
+                    stream.shutdown(Shutdown::Both).unwrap();
                     break;
                 }
                 _ => panic!("Error read {}", e),
@@ -47,7 +46,7 @@ fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: R
 
         match receiver.recv_timeout(Duration::from_millis(100)) {
             Ok(r) => {
-                println!("recv timeout ok");
+                println!("recv timeout ok {}", r.len());
                 match stream.write_all(&r) {
                     Ok(()) => println!("Wrote"),
                     Err(e) => println!("Error write {}", e),
@@ -104,7 +103,7 @@ fn proxy_reverse_listener(addr: &str, channel_rx: Receiver<(Sender<Vec<u8>>, Rec
                         loop {
                             match receiver.recv_timeout(Duration::from_millis(100)) {
                                 Ok(r) => {
-                                    println!("recv timeout ok");
+                                    println!("recv timeout ok {}", r.len());
                                     match socket.write_all(&r) {
                                         Ok(()) => println!("Wrote"),
                                         Err(e) => println!("Error write {}", e),
@@ -117,14 +116,17 @@ fn proxy_reverse_listener(addr: &str, channel_rx: Receiver<(Sender<Vec<u8>>, Rec
                             match socket.read(&mut buf) {
                                 Ok(count) => {
                                     println!("Read {}, {}", count, String::from_utf8_lossy(&buf));
-                                    match sender.send(buf.clone()) {
+                                    match sender.send(buf[..count].to_vec()) {
                                         Ok(_) => println!("sender ok!"),
                                         Err(_e) => break,
                                     }
                                 }
                                 Err(e) => match e.kind() {
                                     ErrorKind::WouldBlock => (),
-                                    ErrorKind::ConnectionReset => break,
+                                    ErrorKind::ConnectionReset => { 
+                                        socket.shutdown(Shutdown::Both).unwrap();
+                                        break;
+                                    }
                                     _ => panic!("Error read {}", e),
                                 }
                             }

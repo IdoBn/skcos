@@ -2,7 +2,7 @@
 # Design
 
 ## Network Diagram
-
+```
 +--------+                            +--------+
 |        |                            |        |
 |        |       +-----+              |        |
@@ -27,20 +27,22 @@
                                       | server |
                                       |        |
                                       +--------+
+```
 
+## Goal
 The goal is to allow the socks client (can be a browser or proxychains) to browse through the reverse socks server
-The tests that will be done to prove that this works fully are:
-[x] proxychains + curl
-[]  chrome
-[]  firefox
-[]  proxychains + nmap 
- 
+
+### The tests that will be done to prove that this works fully are:
+- [x] proxychains + curl
+- [ ]  chrome
+- [ ]  firefox
+- [x]  proxychains + nmap 
+
+
+## Flow
 1. socks client connects to the relay server
 2. relay server listens ahead of time to a connection from the socks server.
 3. relay server connects the new (incomming socks client connection) to the previously held socks server connection.
     3.1. the two new sockets are somehow mapped together...
 3. socks server initiates a new connection to the relay server as soon as it gets data to it's previous connection. this way we can handle multiple connections at once.
 4. data is passed between the two sockets until one of them disconnects
-
-todo:
-there might be an issue with disconnecting sockets. They only disconnect when you try to send stat through them again. We may need to add another channel to somehow trigger the disconnect manually...

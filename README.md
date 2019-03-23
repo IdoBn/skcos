@@ -32,6 +32,20 @@
 ## Goal
 The goal is to allow the socks client (can be a browser or proxychains) to browse through the reverse socks server
 
+## Usage
+first make sure you run the ```relay-agent``` the ```reverse-socks-server``` will connect ot it so it needs to be running.
+```bash
+cargo run --bin relay-agent
+```
+
+Then run the ```reverse-socks-server```
+```bash
+cargo run --bin reverse-socks-server
+```
+
+Finally you can hookup your browser or proxychains to the relay agent and that is it.
+
+
 ### The tests that will be done to prove that this works fully are:
 - [x] proxychains + curl
 - [ ]  chrome

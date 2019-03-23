@@ -105,16 +105,15 @@ fn handle_socks(addr: &str) -> std::io::Result<()>  {
 
     println!("socket request {:?}", socks_request);
 
-    match bincode::serialize(&SocksSuccess::default()) {
-        Ok(bytes) => stream.write_all(&bytes).unwrap(),
-        Err(e) => println!("error {}", e),
-    }
-
     match TcpStream::connect(format!("{}:{}", 
                                     socks_request.remote_addr, 
                                     socks_request.port)) {
         Ok(mut internal_stream) => {
             println!("internal stream {:?}", internal_stream);
+            match bincode::serialize(&SocksSuccess::default()) {
+                Ok(bytes) => stream.write_all(&bytes).unwrap(),
+                Err(e) => panic!("error {}", e),
+            }
 
             spawn(move|| {
                 bind_sockets(&mut stream, &mut internal_stream);
@@ -123,10 +122,12 @@ fn handle_socks(addr: &str) -> std::io::Result<()>  {
         Err(e) => match e.kind() {
             ConnectionRefused => {
                 println!("Connection Refused");
-                drop(stream)
-                //stream.shutdown(Shutdown::Both).unwrap();
+                stream.shutdown(Shutdown::Both).unwrap();
             }
-            ConnectionReset => println!("Connection Reset"),
+            ConnectionReset => {
+                println!("Connection Reset");
+                stream.shutdown(Shutdown::Both).unwrap();
+            }
             _ => panic!("error, {}, {:?}", e, e.kind()),
         }
     }

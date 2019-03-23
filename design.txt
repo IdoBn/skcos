@@ -1,26 +1,39 @@
+
+# Design
+
+## Network Diagram
+
 +--------+                            +--------+
 |        |                            |        |
-|        |                            |        |
-| socks  | ----------------------->   | relay  |
-| client |                            | server |
+|        |       +-----+              |        |
+| socks  | ------| nat |---------->   | relay  |
+| client |       +-----+              | server |
 |        |                            |        |
 +--------+                            +--------+
-                                           |
-                                           |
-                                           |
-                                           |
-                                           |
-                                           |
-                                           |
-                                           |
-                                           \/
-                                        +--------+
-                                        |        |
-                                        | reverse|
-                                        | socks  | 
-                                        | server |
-                                        |        |
-                                        +--------+
+                                          ||
+                                          ||
+                                          ||
+                                      +--------+      +--------------+
+                                      |  nat   |      |  another pc  |
+                                      +--------+      +--------------+
+                                          ||        /
+                                          ||       /
+                                          ||      /
+                                          \/     /
+                                      +--------+/
+                                      |        |
+                                      | reverse|
+                                      | socks  | 
+                                      | server |
+                                      |        |
+                                      +--------+
+
+The goal is to allow the socks client (can be a browser or proxychains) to browse through the reverse socks server
+The tests that will be done to prove that this works fully are:
+[x] proxychains + curl
+[]  chrome
+[]  firefox
+[]  proxychains + nmap 
  
 1. socks client connects to the relay server
 2. relay server listens ahead of time to a connection from the socks server.

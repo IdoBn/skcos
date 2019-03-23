@@ -14,13 +14,19 @@ fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: R
     println!("new connection {:?}", stream);
 
     // create a new connection...
-    stream.set_read_timeout(Some(Duration::new(0,0)));
-    stream.set_write_timeout(Some(Duration::new(0,0)));
-    receiver.recv_timeout(Duration::new(0,0));
+    match stream.set_read_timeout(Some(Duration::from_millis(100))) {
+        Ok(_) => println!("set read timeout ok"),
+        Err(e) => panic!("Set Read Timeout {}", e),
+    }
 
-    let mut buf: Vec<u8> = vec![0; 1024];
+    match stream.set_write_timeout(Some(Duration::from_millis(100))) {
+        Ok(_) => println!("set write timeout ok"),
+        Err(e) => panic!("Set Write Timeout {}", e),
+    }
+
 
     loop {
+        let mut buf: Vec<u8> = vec![0; 1024];
         match stream.read(&mut buf) {
             Ok(count) => {
                 println!("Read {}, {}", count, String::from_utf8_lossy(&buf));
@@ -29,12 +35,18 @@ fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: R
                     Err(e) => panic!("Err sender send {}", e),
                 }
             }
-            Err(e) => println!("Error {}", e),
+            Err(e) => println!("Error read {}", e),
         }
 
-        match stream.write(&receiver.recv().unwrap()) {
-            Ok(count) => println!("Wrote {}", count),
-            Err(e) => println!("Error {}", e),
+        match receiver.recv_timeout(Duration::from_millis(100)) {
+            Ok(r) => {
+                println!("recv timeout ok");
+                match stream.write_all(&r) {
+                    Ok(()) => println!("Wrote"),
+                    Err(e) => println!("Error write {}", e),
+                }
+            }
+            Err(e) => println!("recv timeout {}", e)
         }
     }
 }
@@ -67,18 +79,32 @@ fn proxy_reverse_listener(addr: &str, channel_rx: Receiver<(Sender<Vec<u8>>, Rec
 
     spawn(move|| {
         loop {
-            let s = String::from("hello world!");
             let (sender, receiver) = channel_rx.recv().unwrap();
             match listener.accept() {
                 Ok((mut socket, addr)) => {
                     println!("new client: {:?}", addr);
                     spawn(move|| {
-                        socket.set_read_timeout(Some(Duration::new(0,0)));
-                        socket.set_write_timeout(Some(Duration::new(0,0)));
-                        receiver.recv_timeout(Duration::new(0,0));
+                        match socket.set_read_timeout(Some(Duration::from_millis(100))) {
+                            Ok(_) => println!("set read timeout ok"),
+                            Err(e) => panic!("Set Read Timeout {}", e),
+                        }
+
+                        match socket.set_write_timeout(Some(Duration::from_millis(100))) {
+                            Ok(_) => println!("set read timeout ok"),
+                            Err(e) => panic!("Set Write Timeout {}", e),
+                        }
 
                         loop {
-                            socket.write(&receiver.recv().unwrap()).unwrap();
+                            match receiver.recv_timeout(Duration::from_millis(100)) {
+                                Ok(r) => {
+                                    println!("recv timeout ok");
+                                    match socket.write_all(&r) {
+                                        Ok(()) => println!("Wrote"),
+                                        Err(e) => println!("Error write {}", e),
+                                    }
+                                }
+                                Err(e) => println!("recv timeout {}", e)
+                            }
                             //println!("recved stuff: {}", String::from_utf8_lossy(&receiver.recv().unwrap()));
                             
                             let mut buf: Vec<u8> = vec![0; 1024];
@@ -90,7 +116,7 @@ fn proxy_reverse_listener(addr: &str, channel_rx: Receiver<(Sender<Vec<u8>>, Rec
                                         Err(e) => panic!("Err sender send {}", e),
                                     }
                                 }
-                                Err(e) => println!("Error {}", e),
+                                Err(e) => println!("Error read {}", e),
                             }
                         }
 

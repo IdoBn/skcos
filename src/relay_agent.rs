@@ -5,7 +5,7 @@ use std::net::{TcpListener, TcpStream, Shutdown};
 use std::net::SocketAddr;
 use std::thread::spawn;
 use std::sync::mpsc;
-use std::sync::mpsc::{Sender, Receiver, RecvTimeoutError};
+use std::sync::mpsc::{Sender, Receiver};
 use std::time::Duration;
 
 fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: Receiver<Vec<u8>>) {
@@ -54,16 +54,7 @@ fn handle_connection(mut stream: TcpStream, sender: Sender<Vec<u8>>, receiver: R
                     Err(e) => println!("Error write {}", e),
                 }
             }
-            Err(e) => match e {
-                RecvTimeoutError::Disconnected => {
-                    println!("***************** disconnected");
-                    break;
-                }
-                RecvTimeoutError::Timeout => {
-                    println!("timeout!!!!!!!");
-                    break;
-                }
-            },
+            Err(_e) => break,
         }
     }
 }
@@ -120,16 +111,7 @@ fn proxy_reverse_listener(addr: &str, channel_rx: Receiver<(Sender<Vec<u8>>, Rec
                                         Err(e) => println!("Error write {}", e),
                                     }
                                 }
-                                Err(e) => match e {
-                                    RecvTimeoutError::Disconnected => {
-                                        println!("************* disconnected");
-                                        break;                                        
-                                    }
-                                    RecvTimeoutError::Timeout => { 
-                                        println!("Timeout!!!!!!!");
-                                        break;
-                                    }
-                                }
+                                Err(_e) => break,
                             }
                             
                             let mut buf: Vec<u8> = vec![0; 1024];

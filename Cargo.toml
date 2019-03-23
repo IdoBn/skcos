@@ -1,0 +1,8 @@
+[package]
+name = "socket_server_hello_world"
+version = "0.1.0"
+authors = ["Ido Ben-Natan <ido.bennatan@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+bufstream = "0.1"

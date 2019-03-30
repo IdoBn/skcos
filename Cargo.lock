@@ -50,7 +50,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "socket_server_hello_world"
+name = "skcos"
 version = "0.1.0"
 dependencies = [
  "bincode 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -8,6 +8,8 @@ edition = "2018"
 serde_derive = "1.0.34"
 bincode = "1.0.0"
 serde = "1.0.34"
+tokio = "0.1.18"
+futures = "0.1.26"
 
 [[bin]]
 name = "relay-agent"
